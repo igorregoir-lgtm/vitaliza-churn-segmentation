@@ -1,0 +1,11 @@
+model.pkl
+data/
+dataset/
+*.csv
+__pycache__/
+**/__pycache__/
+*.pyc
+.env
+.vercel
+.DS_Store
+Essa

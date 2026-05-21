@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vitaliza · A Arquitetura da Retenção Preditiva</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">V</div>
+      <div>
+        <div class="brand-kicker">Customer Segmentation Report</div>
+        <div class="brand-title">Vitaliza · A Arquitetura da Retenção Preditiva</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="status-pill" id="model-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Aguardando CSV</span>
+      </span>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="eyebrow">Artefato de Tecnologia · Módulo 2 · Grupo 6</div>
+      <h1>Retenção<br/>Preditiva</h1>
+      <p class="hero-copy">
+        K-Means para segmentação comportamental · Random Forest para predição de churn ·
+        Baseline por regra de negócio como validação interpretativa.
+      </p>
+    </div>
+    <div class="metric-grid" id="hero-metrics">
+      <div class="metric-card"><div class="metric-label">Clientes</div><div class="metric-value" id="m-customers">—</div></div>
+      <div class="metric-card"><div class="metric-label">Taxa de Churn</div><div class="metric-value" id="m-churn">—</div></div>
+      <div class="metric-card"><div class="metric-label">ROC-AUC</div><div class="metric-value" id="m-auc">—</div></div>
+    </div>
+  </section>
+
+  <!-- TABS -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="upload">Upload</button>
+    <button class="tab-btn" data-tab="eda">EDA</button>
+    <button class="tab-btn" data-tab="segmentation">Segmentação</button>
+    <button class="tab-btn" data-tab="prediction">Predição</button>
+    <button class="tab-btn" data-tab="baseline">Baseline</button>
+    <button class="tab-btn" data-tab="deck">Mini Deck</button>
+    <button class="tab-btn" data-tab="methodology">Metodologia</button>
+  </nav>
+
+  <!-- TAB: UPLOAD -->
+  <section class="tab-panel active" id="tab-upload">
+    <div class="layout">
+      <div class="card">
+        <div class="section-label">Configurar Análise</div>
+        <div class="fields">
+          <div class="field">
+            <label>Dataset (CSV da Vitaliza)</label>
+            <div class="drop-zone" id="drop-zone">
+              <input type="file" id="csv-file" accept=".csv" hidden/>
+              <div class="drop-content">
+                <div class="drop-icon">📂</div>
+                <div class="drop-text">Arraste o CSV ou clique para selecionar</div>
+                <div class="drop-hint">gym_churn_us.csv · colunas padrão Vitaliza</div>
+              </div>
+            </div>
+            <div id="file-name" class="file-name"></div>
+          </div>
+
+          <div class="field">
+            <label>Modo de análise</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-mode="full">Análise completa</button>
+              <button class="toggle-btn" data-mode="segment">Somente segmentação (K-Means)</button>
+              <button class="toggle-btn" data-mode="predict">Somente predição (Random Forest)</button>
+              <button class="toggle-btn" data-mode="baseline">Somente baseline</button>
+            </div>
+          </div>
+
+          <div class="field" id="k-field">
+            <label>Número de clusters (K-Means)</label>
+            <input type="number" id="k-input" value="4" min="2" max="10"/>
+            <div class="field-hint">
+              Na Vitaliza, K=4 é o padrão recomendado por aderência à leitura de negócio
+              e por permitir a construção de 4 personas operáveis.
+            </div>
+          </div>
+
+          <button id="run-btn" disabled>Executar Análise</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Jornada Metodológica</div>
+        <div class="journey-steps">
+          <div class="journey-step">
+            <span class="step-num">1</span>
+            <div><strong>Leitura descritiva</strong> — EDA revelou os sinais de churn e retenção.</div>
+          </div>
+          <div class="journey-step">
+            <span class="step-num">2</span>
+            <div><strong>Regra de negócio</strong> — contrato e lifetime como eixos primários.</div>
+          </div>
+          <div class="journey-step">
+            <span class="step-num">3</span>
+            <div><strong>K-Means</strong> — personas comportamentais com silhouette score baixo, mas alto valor de negócio.</div>
+          </div>
+          <div class="journey-step">
+            <span class="step-num">4</span>
+            <div><strong>Baseline como estresse</strong> — convergência confirmou os achados.</div>
+          </div>
+          <div class="journey-step">
+            <span class="step-num">5</span>
+            <div><strong>Random Forest</strong> — score individual de churn para priorização operacional.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: EDA -->
+  <section class="tab-panel" id="tab-eda">
+    <div id="eda-empty" class="empty-state">Execute a análise para ver os resultados.</div>
+    <div id="eda-content" hidden>
+      <div class="findings-grid">
+        <!-- Page 5 — Achado 1 -->
+        <div class="finding-card">
+          <div class="finding-tag">Página 5 · Achado 1</div>
+          <div class="finding-title">Contrato e tempo de plataforma são os dois sinais mais fortes</div>
+          <div class="charts-row">
+            <div class="chart-wrap">
+              <div class="chart-label">Churn por duração de contrato</div>
+              <canvas id="chart-contract" height="220"></canvas>
+            </div>
+            <div class="chart-wrap">
+              <div class="chart-label">Janela crítica dos primeiros 30 dias</div>
+              <canvas id="chart-cohort" height="220"></canvas>
+            </div>
+          </div>
+          <div class="insight-block">
+            <div class="insight-item"><strong>Contrato mensal</strong> cancela muito mais que o anual.</div>
+            <div class="insight-item"><strong>Primeiros 30 dias</strong> são janela crítica de ativação.</div>
+            <div class="insight-item">Contrato e lifetime devem ser cruzados com sinais comportamentais.</div>
+          </div>
+        </div>
+
+        <!-- Page 6 — Achado 2 -->
+        <div class="finding-card">
+          <div class="finding-tag">Página 6 · Achado 2</div>
+          <div class="finding-title">Comunidade, indicação e convênio reduzem churn pela metade</div>
+          <div class="chart-wrap full-width">
+            <div class="chart-label">Fatores protetivos vs. churn</div>
+            <canvas id="chart-protective" height="220"></canvas>
+          </div>
+          <div class="two-col">
+            <div class="insight-block">
+              <div class="insight-label">Drivers protetivos</div>
+              <div class="insight-item">Desafios em grupo criam vínculo social e rotina.</div>
+              <div class="insight-item">Indicação por amigos eleva comprometimento.</div>
+              <div class="insight-item">Convênio empresarial reduz atrito de cancelamento.</div>
+            </div>
+            <div class="insight-block">
+              <div class="insight-label">Implicação estratégica</div>
+              <div class="insight-item">Ativar pelo menos 1 fator protetivo no onboarding.</div>
+              <div class="insight-item">Priorizar engajamento coletivo nos primeiros 30 dias.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Page 7 — Achado 3 -->
+        <div class="finding-card full">
+          <div class="finding-tag">Página 7 · Achado 3</div>
+          <div class="finding-title">Hierarquia de drivers de retenção</div>
+          <div class="chart-wrap">
+            <div class="chart-label">Correlação das variáveis com churn (negativo = proteção)</div>
+            <canvas id="chart-correlation" height="320"></canvas>
+          </div>
+          <div class="insight-block">
+            <div class="insight-item"><strong>Top 5 drivers:</strong> Lifetime · Frequência atual · Idade · Duração do contrato · Meses até vencer.</div>
+            <div class="insight-item">Correlação negativa protege contra churn.</div>
+            <div class="insight-item">Variáveis com valor preditivo próximo de zero devem ter peso reduzido na priorização.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: SEGMENTAÇÃO -->
+  <section class="tab-panel" id="tab-segmentation">
+    <div id="seg-empty" class="empty-state">Execute a análise para ver os segmentos.</div>
+    <div id="seg-content" hidden>
+      <!-- Page 8 -->
+      <div class="finding-card full">
+        <div class="finding-tag">Página 8 · Segmentação</div>
+        <div class="finding-title">4 Segmentos Comportamentais · K-Means (K=4)</div>
+
+        <div class="seg-metrics" id="seg-metrics"></div>
+
+        <div class="charts-row">
+          <div class="chart-wrap">
+            <div class="chart-label">Tamanho e taxa de churn por cluster</div>
+            <canvas id="chart-clusters" height="260"></canvas>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-label">Heatmap comparativo dos 4 segmentos</div>
+            <canvas id="chart-heatmap" height="260"></canvas>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:28px">Leitura dos Segmentos</div>
+        <div class="personas-grid" id="personas-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: PREDIÇÃO -->
+  <section class="tab-panel" id="tab-prediction">
+    <div id="pred-empty" class="empty-state">Execute a análise completa para ver os resultados de predição.</div>
+    <div id="pred-content" hidden>
+      <div class="layout">
+        <div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="section-label">Métricas do Random Forest</div>
+            <div class="metrics-row" id="rf-metrics-row"></div>
+          </div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="section-label">Feature Importance</div>
+            <canvas id="chart-importance" height="280"></canvas>
+          </div>
+          <div class="card">
+            <div class="section-label">Distribuição de Scores de Churn</div>
+            <canvas id="chart-scores" height="220"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="section-label">Curva ROC</div>
+            <canvas id="chart-roc" height="260"></canvas>
+          </div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="section-label">Score Médio por Cluster</div>
+            <div id="score-by-cluster"></div>
+          </div>
+          <div class="card">
+            <div class="section-label">Priorização por Persona</div>
+            <div class="priority-list" id="priority-list">
+              <div class="priority-item high"><strong>C0 · Recém-chegado em fuga</strong> — Ação imediata</div>
+              <div class="priority-item medium"><strong>C2 · Engajado mensal</strong> — Migração assistida</div>
+              <div class="priority-item deferred"><strong>C3 · Médio em trânsito</strong> — Principal caso de uso RF</div>
+              <div class="priority-item low"><strong>C1 · Leal anual</strong> — Preservação / advocacy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: BASELINE -->
+  <section class="tab-panel" id="tab-baseline">
+    <div id="baseline-empty" class="empty-state">Execute a análise para ver a baseline.</div>
+    <div id="baseline-content" hidden>
+      <div class="layout">
+        <div class="card">
+          <div class="section-label">Baseline por Regra de Negócio</div>
+          <p class="muted-text" style="margin-bottom:20px">
+            Camada opcional de validação interpretativa — não substitui K-Means nem Random Forest.
+            Serve como controle metodológico e ponte com o negócio.
+          </p>
+          <div id="baseline-segments"></div>
+        </div>
+        <div class="card">
+          <div class="section-label">Convergência com K-Means</div>
+          <p class="muted-text" id="convergence-note" style="margin-bottom:20px"></p>
+          <div class="section-label" style="margin-top:20px">Métricas da Baseline</div>
+          <div id="baseline-metrics"></div>
+          <div class="section-label" style="margin-top:20px">Interpretação</div>
+          <p class="muted-text" id="baseline-interpretation"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: MINI DECK -->
+  <section class="tab-panel" id="tab-deck">
+    <div class="deck">
+      <div class="deck-slide">
+        <div class="slide-num">01</div>
+        <div class="slide-title">Contexto do Problema</div>
+        <p>A Vitaliza enfrenta um desafio de retenção de clientes com padrões claros de churn concentrados nos primeiros 30 dias e fortemente correlacionados com tipo de contrato e engajamento.</p>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">02</div>
+        <div class="slide-title">O Que o Dado Mostra</div>
+        <div id="deck-data-summary"></div>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">03</div>
+        <div class="slide-title">Jornada Metodológica</div>
+        <p>EDA → Regra de Negócio → K-Means (segmentação) → Baseline (estresse) → Random Forest (predição individual). Cada etapa construiu sobre os achados da anterior.</p>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">04</div>
+        <div class="slide-title">EDA · Achados Principais</div>
+        <ul class="deck-list">
+          <li><strong>Contrato mensal</strong> tem taxa de churn muito superior ao anual.</li>
+          <li><strong>Primeiros 30 dias</strong> concentram a maior parte dos cancelamentos.</li>
+          <li><strong>Fatores protetivos</strong> (grupo, indicação, convênio) reduzem churn ~50%.</li>
+          <li><strong>Frequência atual</strong> é o principal sinal operacional de alerta.</li>
+        </ul>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">05</div>
+        <div class="slide-title">Segmentação com K-Means</div>
+        <div id="deck-seg-summary"></div>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">06</div>
+        <div class="slide-title">4 Personas</div>
+        <div class="deck-personas" id="deck-personas"></div>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">07</div>
+        <div class="slide-title">Predição com Random Forest</div>
+        <div id="deck-rf-summary"></div>
+        <p style="margin-top:12px">O RF não cria personas — ele estima risco individual e refina a priorização dentro dos clusters.</p>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">08</div>
+        <div class="slide-title">Priorização Operacional</div>
+        <ul class="deck-list">
+          <li><strong>C0</strong> — Ação imediata: onboarding nos primeiros 30 dias.</li>
+          <li><strong>C2</strong> — Migração assistida: oportunidade contratual.</li>
+          <li><strong>C3</strong> — Principal caso de uso do Random Forest.</li>
+          <li><strong>C1</strong> — Preservação: evitar sleeping dogs. Não supercontatar.</li>
+        </ul>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">09</div>
+        <div class="slide-title">Limitações da Análise</div>
+        <ul class="deck-list">
+          <li>Ausência de motivo declarado de cancelamento.</li>
+          <li>Snapshot mensal sem série temporal granular.</li>
+          <li>Silhouette score baixo — fronteiras pouco nítidas entre clusters.</li>
+          <li>Correlação não implica causalidade.</li>
+          <li>Amostra menor que a base total. Hipóteses ainda a validar.</li>
+          <li>Risco de sleeping dogs ao supercontatar o C1.</li>
+        </ul>
+      </div>
+      <div class="deck-slide">
+        <div class="slide-num">10</div>
+        <div class="slide-title">Recomendação Estratégica</div>
+        <ul class="deck-list">
+          <li>Criar régua de ativação de 30 dias para novos clientes (C0).</li>
+          <li>Oferecer migração de contrato mensal para anual com benefício claro (C2).</li>
+          <li>Usar o score RF para priorizar contato proativo no C3.</li>
+          <li>Monitorar frequência como sinal de alerta precoce em todos os segmentos.</li>
+          <li>Ativar pelo menos 1 fator protetivo (grupo / indicação / convênio) no onboarding.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: METODOLOGIA -->
+  <section class="tab-panel" id="tab-methodology">
+    <div class="methodology">
+      <div class="method-section">
+        <div class="method-num">5</div>
+        <div class="method-body">
+          <div class="method-title">Interpretação do K-Means</div>
+          <p>A opção pelo <strong>KMeans</strong> representa uma escolha por um algoritmo consolidado de aprendizado não supervisionado, apropriado para segmentar clientes a partir de padrões observados de comportamento. Implementado por meio da biblioteca scikit-learn, o modelo organiza os clientes em grupos de similaridade, permitindo identificar personas com sinais distintos de risco e valor de negócio, ainda que sem utilizar diretamente o rótulo histórico de churn no treinamento. Sua qualidade analítica deve ser interpretada principalmente pela coerência dos agrupamentos, pela separação entre clusters e pela capacidade de produzir segmentos acionáveis para decisão executiva.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">6</div>
+        <div class="method-body">
+          <div class="method-title">Interpretação do Random Forest</div>
+          <p>A opção pelo <strong>RandomForestClassifier</strong> representa uma escolha por um algoritmo consolidado de machine learning para problemas de classificação supervisionada, amplamente utilizado em contextos de predição de churn. Implementado por meio da biblioteca scikit-learn, o modelo combina múltiplas árvores de decisão para estimar a probabilidade de churn de cada cliente, reduzindo a variância e aumentando a robustez das previsões. Sua performance deve ser avaliada principalmente pelo ROC-AUC, métrica adequada para medir a capacidade do modelo de diferenciar clientes com maior e menor risco de churn.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">7</div>
+        <div class="method-body">
+          <div class="method-title">Interpretação da Baseline por Regra de Negócio</div>
+          <p>A opção pela <strong>Baseline por Regra de Negócio</strong> representa uma escolha deliberada por uma camada de validação interpretável, construída a partir de regras simples e diretamente compreensíveis por stakeholders de negócio. Em vez de depender exclusivamente de aprendizado estatístico, essa abordagem organiza perfis de risco a partir de variáveis-chave como tipo de contrato, tempo de plataforma e sinais básicos de engajamento. Sua utilidade não está em maximizar performance preditiva, mas em oferecer clareza executiva, capacidade de auditoria e um mecanismo de controle para testar a robustez dos achados produzidos pelo K-Means e pelo Random Forest.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">8</div>
+        <div class="method-body">
+          <div class="method-title">Como K-Means e Random Forest se conectam</div>
+          <p>Neste artefato, <strong>K-Means</strong> e <strong>Random Forest</strong> exercem papéis complementares e não concorrentes. O K-Means responde à pergunta "quem se parece com quem?" e permite organizar a base em personas comportamentais interpretáveis. Já o Random Forest responde à pergunta "quem tem maior probabilidade de churn?" e permite estimar risco individual dentro e através dessas personas.</p>
+          <p style="margin-top:12px">Em termos de negócio, isso significa que a segmentação define <strong>onde olhar</strong>, enquanto a predição ajuda a definir <strong>quem priorizar primeiro</strong>. A primeira camada estrutura a leitura estratégica; a segunda torna a ação operacional mais precisa.</p>
+          <p style="margin-top:12px">A <strong>baseline por regra de negócio</strong> atua como uma terceira lente de validação interpretativa. Quando os eixos simples de contrato e lifetime convergem com os clusters do K-Means e com os scores de risco do Random Forest, a análise ganha robustez metodológica e clareza executiva.</p>
+          <p style="margin-top:12px">Essa arquitetura expressa a jornada de aprendizado do trabalho: começamos com uma leitura descritiva, testamos uma lógica simples de negócio, refinamos a segmentação com K-Means e, por fim, incorporamos o Random Forest para transformar segmentação em priorização preditiva.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">9</div>
+        <div class="method-body">
+          <div class="method-title">Limitações Explícitas</div>
+          <ul class="deck-list">
+            <li>Ausência de motivo declarado de cancelamento — a análise é observacional.</li>
+            <li>Snapshot mensal sem série temporal granular — não captura sazonalidade.</li>
+            <li>Silhouette score baixo sugere fronteiras pouco nítidas entre clusters.</li>
+            <li>A baseline por regra é simples por design — não maximiza performance.</li>
+            <li>Diferença entre correlação e causalidade — hipóteses ainda a validar.</li>
+            <li>Amostra potencialmente menor que a base total da Vitaliza.</li>
+            <li>Risco de sleeping dogs ao supercontatar o C1 (Leal anual).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- app-shell -->
+
+<div id="toast" class="toast hidden"></div>
+<div id="loading" class="loading-overlay hidden">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div id="loading-msg">Executando análise…</div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

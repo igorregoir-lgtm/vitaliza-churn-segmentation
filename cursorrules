@@ -1,0 +1,51 @@
+# Cursor Rules — Gym Churn Predictor
+# Adicione este arquivo na raiz do projeto
+
+## Design & Visual
+
+Quando for criar ou melhorar interfaces web:
+- Use paleta escura como base (bg #0b0e13, surface #13171f)
+- Tipografia: Google Fonts — Syne para títulos (peso 800), Space Mono para labels e dados
+- Bordas sutis (1px solid #222838), border-radius generoso (12-14px nos cards)
+- Cor de destaque principal: #00c4a7 (teal) — use com moderação
+- Hierarquia visual clara: eyebrow label → título → subtítulo → conteúdo
+- Nunca use branco puro (#fff) nem preto puro (#000)
+
+## Componentes & Interação
+
+Para componentes interativos:
+- Botões primários: background teal, cor do texto escuro (#0b0e13), font-weight 700
+- Hover sempre com transition de 0.2s, active com scale(0.98)
+- Inputs: fundo mais escuro que o card, border que ilumina no focus (border-color teal)
+- Toggles binários (Sim/Não) sempre como botões visuais, nunca como checkbox
+- Estados de loading: desabilita o botão + troca o texto ("Calculando...")
+- Erros: cor #ff4d6d, fonte Space Mono, abaixo do botão de ação
+
+## Layout & Responsividade
+
+Para layout:
+- Grid de duas colunas no desktop (formulário + resultado), coluna única no mobile
+- Max-width de 800-860px centralizado com padding lateral de 20px
+- Cards com padding interno de 28-32px
+- Gap entre elementos do formulário: 14-16px
+- Section labels em Space Mono, 9-10px, letter-spacing 0.2em, uppercase, cor teal
+- Separadores: linha fina (1px) na cor da border, nunca hr visível
+
+## Qualidade de código
+
+Para HTML/CSS/JS puro (sem framework):
+- Todo CSS em variáveis :root — nunca valores hardcoded espalhados
+- Animações via transition no CSS, nunca setTimeout para efeitos visuais simples
+- Separar claramente: bloco de variáveis CSS → reset → layout → componentes → estados
+- JavaScript no final do body, funções nomeadas descritivamente em português
+- Nunca usar innerHTML para dados vindos de API sem sanitizar
+- Estados da UI controlados por display:none/flex, nunca remover/adicionar elementos
+
+## Tom & UX
+
+Para textos e microcopy:
+- Labels de campos: descritivos e em português, nunca só o nome da variável
+- Placeholders com exemplos reais ("ex: 24"), nunca "Digite aqui"
+- Mensagens de erro específicas ("Preencha todos os campos antes de calcular")
+- Resultados com contexto ("probabilidade de churn · modelo RandomForest")
+- Evite jargão técnico na interface — o usuário final não é dev
