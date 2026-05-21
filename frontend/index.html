@@ -460,13 +460,21 @@
       <div class="method-section">
         <div class="method-num">1</div>
         <div class="method-body">
+          <div class="method-title">Contexto do Problema</div>
+          <p>Academias dependem de recorrência. Quando um cliente reduz frequência, está perto do fim do contrato ou interage pouco com a operação, o risco de cancelamento aumenta. O objetivo do projeto é transformar esses sinais em uma <strong>probabilidade de churn</strong> para apoiar ações de retenção — passando da observação descritiva para a priorização preditiva individual.</p>
+          <p style="margin-top:12px">A proposta é demonstrar uma versão funcional de ponta a ponta: entender a base de clientes, segmentar por comportamento, treinar um modelo preditivo e disponibilizar uma interface para estimar o risco individual de cancelamento. O fluxo foi desenhado para ser demonstrável: o usuário envia o CSV, o pipeline processa e as abas de análise e inferência passam a usar os resultados imediatamente.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">2</div>
+        <div class="method-body">
           <div class="method-title">Arquitetura do Artefato</div>
           <p>O artefato é uma aplicação web deployada integralmente no <strong>Vercel</strong>. O frontend é HTML, CSS e JavaScript vanilla com <strong>Chart.js 4.4</strong> para todos os gráficos. O backend é uma API <strong>FastAPI</strong> em Python executada como função serverless no próprio Vercel (<code>api/index.py</code>) — todos os endpoints respondem pelo mesmo domínio em <code>/api/*</code>, eliminando dependência de backend externo e problemas de CORS.</p>
           <p style="margin-top:12px">Os endpoints principais são <code>POST /api/eda</code>, <code>POST /api/segment</code>, <code>POST /api/segment-and-score</code> (pipeline completo: EDA + K-Means + Random Forest + Baseline) e <code>POST /api/baseline</code>. O CSV carregado pelo usuário é processado inteiramente em memória — sem banco de dados. As dependências Python (<code>fastapi</code>, <code>scikit-learn</code>, <code>pandas</code>, <code>numpy</code>) são declaradas em <code>requirements.txt</code> na raiz do repositório.</p>
         </div>
       </div>
       <div class="method-section">
-        <div class="method-num">2</div>
+        <div class="method-num">3</div>
         <div class="method-body">
           <div class="method-title">Dataset — gym_churn_us.csv</div>
           <p>A base de análise conta com <strong>4.000 clientes</strong> e <strong>14 colunas</strong>. Das 14, <strong>11 são features de aprendizado de máquina</strong>: Lifetime, Frequência atual (mês corrente), Idade, Duração do contrato, Meses até vencer, Frequência histórica, Gastos extras, Desafios em grupo, Indicação de amigos, Convênio empresarial e Mora perto. As colunas <strong>gender</strong> e <strong>Phone</strong> foram mantidas no EDA para confirmar o achado da página 7 do relatório: ambas apresentam correlação próxima de zero com churn e não entram nos modelos preditivos. A coluna <strong>Churn</strong> (0/1) é o rótulo supervisionado.</p>
@@ -474,7 +482,41 @@
         </div>
       </div>
       <div class="method-section">
-        <div class="method-num">3</div>
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <div class="method-title">EDA — O que a Exploração dos Dados Busca Responder</div>
+          <p>A análise exploratória foi conduzida para responder quatro perguntas centrais antes de qualquer modelagem:</p>
+          <ul class="deck-list" style="margin-top:12px">
+            <li>O perfil demográfico e comportamental de quem cancela vs. quem permanece é diferente?</li>
+            <li>Quais variáveis têm maior correlação com o churn?</li>
+            <li>Existem janelas temporais críticas — como os primeiros 30 dias — onde o risco se concentra?</li>
+            <li>Fatores protetivos (desafios em grupo, indicação de amigos, convênio empresarial) de fato reduzem a probabilidade de cancelamento?</li>
+          </ul>
+          <p style="margin-top:12px">Os achados estão organizados nas páginas 5, 6 e 7 do relatório de negócios e são reproduzidos interativamente na aba <strong>EDA</strong> do artefato após o upload do CSV.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">5</div>
+        <div class="method-body">
+          <div class="method-title">Features Usadas — Quais Sinais Alimentam a Previsão</div>
+          <p>Os três modelos (K-Means, Random Forest e Baseline) compartilham o mesmo conjunto de <strong>11 features</strong> extraídas do dataset. Variáveis com correlação próxima de zero (<em>gender</em>, <em>Phone</em>) foram excluídas dos modelos preditivos após confirmação no EDA.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-top:14px">
+            <div><strong>Lifetime</strong> — meses como cliente</div>
+            <div><strong>Avg_class_frequency_current_month</strong> — frequência atual (aulas/sem)</div>
+            <div><strong>Age</strong> — idade do cliente</div>
+            <div><strong>Contract_period</strong> — duração do contrato (1, 6 ou 12 meses)</div>
+            <div><strong>Month_to_end_contract</strong> — meses até o vencimento</div>
+            <div><strong>Avg_class_frequency_total</strong> — frequência histórica (aulas/sem)</div>
+            <div><strong>Avg_additional_charges_total</strong> — gastos extras mensais médios</div>
+            <div><strong>Group_visits</strong> — participa de desafios em grupo (0/1)</div>
+            <div><strong>Promo_friends</strong> — entrou por indicação de amigos (0/1)</div>
+            <div><strong>Partner</strong> — tem convênio empresarial (0/1)</div>
+            <div><strong>Near_Location</strong> — mora perto da academia (0/1)</div>
+          </div>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">6</div>
         <div class="method-body">
           <div class="method-title">K-Means — Segmentação Comportamental</div>
           <p>A opção pelo <strong>KMeans</strong> (scikit-learn) representa uma escolha por aprendizado não supervisionado que organiza clientes em grupos de similaridade comportamental sem utilizar o rótulo histórico de churn no treinamento. As 11 features são normalizadas com <strong>StandardScaler</strong> antes do ajuste. O modelo usa <code>n_clusters=4</code>, <code>n_init=30</code> e <code>random_state=42</code> — K=4 foi escolhido por permitir quatro personas operáveis com leitura clara de negócio.</p>
@@ -482,7 +524,7 @@
         </div>
       </div>
       <div class="method-section">
-        <div class="method-num">4</div>
+        <div class="method-num">7</div>
         <div class="method-body">
           <div class="method-title">Random Forest — Predição Individual de Churn</div>
           <p>A opção pelo <strong>RandomForestClassifier</strong> (scikit-learn) representa uma escolha por classificação supervisionada que estima a probabilidade de churn de cada cliente individualmente. O modelo usa <code>n_estimators=100</code> e <code>random_state=42</code>, treinado em 70% dos dados e avaliado nos 30% restantes. A performance é medida principalmente pelo <strong>ROC-AUC</strong>, métrica adequada para dados com classes desbalanceadas (churn é evento minoritário).</p>
@@ -490,7 +532,20 @@
         </div>
       </div>
       <div class="method-section">
-        <div class="method-num">5</div>
+        <div class="method-num">8</div>
+        <div class="method-body">
+          <div class="method-title">Como Interpretar o Score — Da Probabilidade para a Ação</div>
+          <p>O Random Forest retorna uma <strong>probabilidade entre 0 e 1</strong> para cada cliente. O artefato traduz esse número em três faixas operacionais:</p>
+          <ul class="deck-list" style="margin-top:12px">
+            <li><strong>Alto Risco (≥ 70%)</strong> — ação imediata recomendada: contato proativo, oferta de retenção ou ativação de fator protetivo no prazo mais curto possível.</li>
+            <li><strong>Risco Médio (40–69%)</strong> — monitorar e ativar fator protetivo: incluir o cliente em fluxo de acompanhamento e avaliar oportunidade de migração contratual.</li>
+            <li><strong>Baixo Risco (&lt; 40%)</strong> — manutenção e advocacy: evitar supercontato (risco de sleeping dogs); priorizar estratégias de indicação e engajamento em grupo.</li>
+          </ul>
+          <p style="margin-top:12px">A aba <strong>Inferência</strong> do artefato permite calcular o score de um cliente específico preenchendo os 11 campos individualmente — sem necessidade de um CSV completo. Os três principais drivers da predição são exibidos para apoiar a interpretação e a tomada de decisão pelo time de retenção.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">9</div>
         <div class="method-body">
           <div class="method-title">Baseline por Regra de Negócio — Validação Interpretativa</div>
           <p>A <strong>Baseline por Regra de Negócio</strong> é uma camada explicitamente interpretável, construída a partir de regras auditáveis baseadas em três variáveis: <strong>contract_period</strong>, <strong>lifetime_month</strong> e <strong>avg_class_frequency_current_month</strong>. Clientes com contrato mensal e lifetime curto ou frequência muito baixa são classificados como Alto Risco; contratos semestrais com engajamento intermediário recebem Risco Médio; contratos anuais com frequência consistente recebem Baixo Risco.</p>
@@ -498,7 +553,7 @@
         </div>
       </div>
       <div class="method-section">
-        <div class="method-num">6</div>
+        <div class="method-num">10</div>
         <div class="method-body">
           <div class="method-title">Como os Três Modelos se Conectam</div>
           <p>K-Means, Random Forest e Baseline exercem papéis complementares e não concorrentes. O <strong>K-Means</strong> responde "quem se parece com quem?" — estrutura a base em personas comportamentais e define <em>onde olhar</em>. O <strong>Random Forest</strong> responde "quem tem maior probabilidade de churn?" — estima risco individual e define <em>quem priorizar primeiro</em> dentro e entre as personas. A <strong>Baseline</strong> responde "essa lógica faz sentido de negócio?" — valida os achados com regras auditáveis e vocabulário executivo.</p>
@@ -506,7 +561,7 @@
         </div>
       </div>
       <div class="method-section">
-        <div class="method-num">7</div>
+        <div class="method-num">11</div>
         <div class="method-body">
           <div class="method-title">Limitações Explícitas</div>
           <ul class="deck-list">
