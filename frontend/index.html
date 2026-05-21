@@ -51,6 +51,7 @@
     <button class="tab-btn" data-tab="eda">EDA</button>
     <button class="tab-btn" data-tab="segmentation">Segmentação / Personas</button>
     <button class="tab-btn" data-tab="prediction">Predição</button>
+    <button class="tab-btn" data-tab="inference">Inferência</button>
     <button class="tab-btn" data-tab="baseline">Baseline</button>
     <button class="tab-btn" data-tab="deck">Mini Deck</button>
     <button class="tab-btn" data-tab="methodology">Metodologia</button>
@@ -256,6 +257,93 @@
               <div class="priority-item low"><strong>C1 · Leal anual</strong> — Preservação / advocacy</div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: INFERÊNCIA -->
+  <section class="tab-panel" id="tab-inference">
+    <div class="layout">
+      <div class="card">
+        <div class="section-label">Dados do Cliente</div>
+        <p class="muted-text" style="margin-bottom:18px">
+          Treine o modelo primeiro via Upload (Análise completa ou Somente predição).
+          Preencha os campos abaixo para calcular o score individual de churn.
+        </p>
+        <div class="fields">
+          <div class="inf-grid">
+            <div class="field">
+              <label>Tempo como cliente (meses)</label>
+              <input type="number" id="inf-Lifetime" min="0" max="60" step="1" value="4"/>
+            </div>
+            <div class="field">
+              <label>Frequência atual (aulas/sem)</label>
+              <input type="number" id="inf-Avg_class_frequency_current_month" min="0" max="7" step="0.1" value="2.0"/>
+            </div>
+            <div class="field">
+              <label>Idade</label>
+              <input type="number" id="inf-Age" min="18" max="80" step="1" value="29"/>
+            </div>
+            <div class="field">
+              <label>Duração do contrato (meses)</label>
+              <select id="inf-Contract_period">
+                <option value="1">1 — Mensal</option>
+                <option value="6" selected>6 — Semestral</option>
+                <option value="12">12 — Anual</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Meses até vencer o contrato</label>
+              <input type="number" id="inf-Month_to_end_contract" min="0" max="12" step="0.5" value="4.0"/>
+            </div>
+            <div class="field">
+              <label>Frequência histórica (aulas/sem)</label>
+              <input type="number" id="inf-Avg_class_frequency_total" min="0" max="7" step="0.1" value="2.0"/>
+            </div>
+            <div class="field" style="grid-column:span 2">
+              <label>Gastos extras (R$)</label>
+              <input type="number" id="inf-Avg_additional_charges_total" min="0" max="500" step="1" value="150"/>
+            </div>
+          </div>
+          <div class="section-label" style="margin-top:4px">Fatores protetivos</div>
+          <div class="binary-toggles">
+            <div class="binary-field">
+              <span class="binary-label">Desafios em grupo</span>
+              <div class="binary-toggle" id="inf-Group_visits" data-val="0">
+                <button class="toggle-btn" data-v="1">Sim</button>
+                <button class="toggle-btn active" data-v="0">Não</button>
+              </div>
+            </div>
+            <div class="binary-field">
+              <span class="binary-label">Indicação de amigos</span>
+              <div class="binary-toggle" id="inf-Promo_friends" data-val="0">
+                <button class="toggle-btn" data-v="1">Sim</button>
+                <button class="toggle-btn active" data-v="0">Não</button>
+              </div>
+            </div>
+            <div class="binary-field">
+              <span class="binary-label">Convênio empresarial</span>
+              <div class="binary-toggle" id="inf-Partner" data-val="0">
+                <button class="toggle-btn" data-v="1">Sim</button>
+                <button class="toggle-btn active" data-v="0">Não</button>
+              </div>
+            </div>
+            <div class="binary-field">
+              <span class="binary-label">Mora perto da academia</span>
+              <div class="binary-toggle" id="inf-Near_Location" data-val="1">
+                <button class="toggle-btn active" data-v="1">Sim</button>
+                <button class="toggle-btn" data-v="0">Não</button>
+              </div>
+            </div>
+          </div>
+          <button id="infer-btn">Calcular Score de Churn</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-label">Score de Churn</div>
+        <div id="inference-result">
+          <div class="empty-state" style="padding:40px 0">Preencha os dados e clique em Calcular.</div>
         </div>
       </div>
     </div>

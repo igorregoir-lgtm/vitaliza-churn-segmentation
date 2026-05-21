@@ -93,3 +93,20 @@ def get_score_by_cluster(df_scores: pd.DataFrame) -> list[dict]:
         }
         for cid, grp in df_scores.groupby("cluster")
     ]
+
+
+def score_single_customer(model, feature_defaults: dict, data: dict) -> dict:
+    from .data_loader import DEFAULT_FEATURE_VALUES
+    feature_values = [
+        data.get(f) if data.get(f) is not None else feature_defaults.get(f, DEFAULT_FEATURE_VALUES.get(f, 0))
+        for f in FEATURES
+    ]
+    features = pd.DataFrame([feature_values], columns=FEATURES)
+    prob = float(model.predict_proba(features)[0][1])
+    if prob >= 0.7:
+        label, level = "Alto Risco de Churn", "high"
+    elif prob >= 0.4:
+        label, level = "Risco Médio de Churn", "medium"
+    else:
+        label, level = "Baixo Risco de Churn", "low"
+    return {"churn_probability": round(prob, 4), "churn_label": label, "risk_level": level}

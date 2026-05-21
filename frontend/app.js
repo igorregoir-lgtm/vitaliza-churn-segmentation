@@ -136,9 +136,81 @@ function clearAnalysis() {
   });
 
   document.getElementById('clear-btn').hidden = true;
+  const ir = document.getElementById('inference-result');
+  if (ir) ir.innerHTML = '<div class="empty-state" style="padding:40px 0">Preencha os dados e clique em Calcular.</div>';
   analysisRan = false;
   switchTab('upload');
   showToast('Análise limpa. Pode fazer um novo upload.', 'success');
+}
+
+// ── Inference ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('.binary-toggle').forEach(group => {
+  group.querySelectorAll('[data-v]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      group.querySelectorAll('[data-v]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      group.dataset.val = btn.dataset.v;
+    });
+  });
+});
+
+document.getElementById('infer-btn').addEventListener('click', submitInference);
+
+async function submitInference() {
+  const g = id => document.getElementById(id);
+  const payload = {
+    Lifetime: parseFloat(g('inf-Lifetime').value) || null,
+    Avg_class_frequency_current_month: parseFloat(g('inf-Avg_class_frequency_current_month').value) || null,
+    Age: parseFloat(g('inf-Age').value) || null,
+    Contract_period: parseInt(g('inf-Contract_period').value) || null,
+    Month_to_end_contract: parseFloat(g('inf-Month_to_end_contract').value) || null,
+    Avg_class_frequency_total: parseFloat(g('inf-Avg_class_frequency_total').value) || null,
+    Avg_additional_charges_total: parseFloat(g('inf-Avg_additional_charges_total').value) || null,
+    Group_visits: parseInt(g('inf-Group_visits').dataset.val),
+    Promo_friends: parseInt(g('inf-Promo_friends').dataset.val),
+    Partner: parseInt(g('inf-Partner').dataset.val),
+    Near_Location: parseInt(g('inf-Near_Location').dataset.val),
+  };
+  showLoading('Calculando score de churn…');
+  try {
+    const res = await fetch(`${API_BASE}/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Erro desconhecido.' }));
+      throw new Error(err.detail || `Erro ${res.status}`);
+    }
+    renderInferenceResult(await res.json());
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+function renderInferenceResult(data) {
+  const prob = data.churn_probability;
+  const level = data.risk_level;
+  const colorMap = { high: 'var(--high)', medium: 'var(--med)', low: 'var(--low)' };
+  const color = colorMap[level] || 'var(--brand)';
+  const bgMap = { high: 'var(--high-soft)', medium: 'var(--med-soft)', low: 'var(--low-soft)' };
+  const drivers = (data.top_3_drivers || []).map((d, i) => `
+    <div class="score-driver">
+      <div class="driver-rank">${i + 1}</div>
+      <div>
+        <strong>${d.label}</strong>
+        <div style="color:var(--muted);margin-top:2px;font-size:0.78rem">${d.direction} · valor: ${d.value} · ref: ${d.reference_value.toFixed(2)}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('inference-result').innerHTML = `
+    <div class="score-result-card" style="background:${bgMap[level]};border-radius:var(--radius-md);padding:28px;margin-bottom:16px;text-align:center">
+      <div style="font-size:0.74rem;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Probabilidade de Churn</div>
+      <div style="font-size:3.8rem;font-weight:800;color:${color};letter-spacing:-0.06em;line-height:1">${(prob * 100).toFixed(1)}%</div>
+      <div style="font-size:1rem;font-weight:700;color:${color};margin-top:8px">${data.churn_label}</div>
+    </div>
+    ${drivers ? `<div class="section-label">Principais drivers</div><div class="score-drivers">${drivers}</div>` : ''}`;
 }
 
 // ── Run analysis ──────────────────────────────────────────────────────────────
@@ -155,7 +227,7 @@ async function runAnalysis() {
 
     let endpoint = `${API_BASE}/segment-and-score`;
     if (selectedMode === 'segment') endpoint = `${API_BASE}/segment`;
-    else if (selectedMode === 'predict') { fd.delete('k'); endpoint = `${API_BASE}/train`; }
+    else if (selectedMode === 'predict') { fd.delete('k'); endpoint = `${API_BASE}/train`; fd.delete('k'); }
     else if (selectedMode === 'baseline') { fd.delete('k'); endpoint = `${API_BASE}/baseline`; }
 
     setLoadingMsg(endpointLabel(endpoint));
@@ -166,16 +238,27 @@ async function runAnalysis() {
     }
     const data = await res.json();
 
-    if (selectedMode === 'full') renderFull(data);
-    else if (selectedMode === 'segment') renderSegmentation(data);
-    else if (selectedMode === 'baseline') renderBaseline(data);
+    if (selectedMode === 'full') {
+      renderFull(data);
+      switchTab('eda');
+    } else if (selectedMode === 'segment') {
+      renderSegmentation(data);
+      switchTab('segmentation');
+    } else if (selectedMode === 'predict') {
+      renderPredictionData(data);
+      const m = data.metrics || {};
+      updateHeroMetrics({ customers: m.rows_used, churn_rate: m.churn_rate }, m);
+      switchTab('prediction');
+    } else if (selectedMode === 'baseline') {
+      renderBaseline(data);
+      switchTab('baseline');
+    }
 
     document.getElementById('status-dot').classList.add('ready');
     document.getElementById('status-text').textContent = 'Análise concluída';
     document.getElementById('clear-btn').hidden = false;
     analysisRan = true;
     showToast('Análise concluída!', 'success');
-    switchTab('eda');
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
