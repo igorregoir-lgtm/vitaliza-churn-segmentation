@@ -64,15 +64,10 @@
         <div class="fields">
           <div class="field">
             <label>Dataset (CSV da Vitaliza)</label>
-            <div class="drop-zone" id="drop-zone">
-              <input type="file" id="csv-file" accept=".csv" hidden/>
-              <div class="drop-content">
-                <div class="drop-icon">📂</div>
-                <div class="drop-text">Arraste o CSV ou clique para selecionar</div>
-                <div class="drop-hint">gym_churn_us.csv · colunas padrão Vitaliza</div>
-              </div>
+            <div class="file-input-box">
+              <input type="file" id="csv-file" accept=".csv"/>
             </div>
-            <div id="file-name" class="file-name"></div>
+            <div class="field-hint">Arquivo CSV com a coluna Churn e as 11 features</div>
           </div>
 
           <div class="field">
@@ -375,48 +370,67 @@
   <section class="tab-panel" id="tab-methodology">
     <div class="methodology">
       <div class="method-section">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <div class="method-title">Arquitetura do Artefato</div>
+          <p>O artefato é uma aplicação web deployada integralmente no <strong>Vercel</strong>. O frontend é HTML, CSS e JavaScript vanilla com <strong>Chart.js 4.4</strong> para todos os gráficos. O backend é uma API <strong>FastAPI</strong> em Python executada como função serverless no próprio Vercel (<code>api/index.py</code>) — todos os endpoints respondem pelo mesmo domínio em <code>/api/*</code>, eliminando dependência de backend externo e problemas de CORS.</p>
+          <p style="margin-top:12px">Os endpoints principais são <code>POST /api/eda</code>, <code>POST /api/segment</code>, <code>POST /api/segment-and-score</code> (pipeline completo: EDA + K-Means + Random Forest + Baseline) e <code>POST /api/baseline</code>. O CSV carregado pelo usuário é processado inteiramente em memória — sem banco de dados. As dependências Python (<code>fastapi</code>, <code>scikit-learn</code>, <code>pandas</code>, <code>numpy</code>) são declaradas em <code>requirements.txt</code> na raiz do repositório.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <div class="method-title">Dataset — gym_churn_us.csv</div>
+          <p>A base de análise conta com <strong>4.000 clientes</strong> e <strong>14 colunas</strong>. Das 14, <strong>11 são features de aprendizado de máquina</strong>: Lifetime, Frequência atual (mês corrente), Idade, Duração do contrato, Meses até vencer, Frequência histórica, Gastos extras, Desafios em grupo, Indicação de amigos, Convênio empresarial e Mora perto. As colunas <strong>gender</strong> e <strong>Phone</strong> foram mantidas no EDA para confirmar o achado da página 7 do relatório: ambas apresentam correlação próxima de zero com churn e não entram nos modelos preditivos. A coluna <strong>Churn</strong> (0/1) é o rótulo supervisionado.</p>
+          <p style="margin-top:12px">A limpeza remove duplicatas e linhas com nulos nas 12 colunas obrigatórias (11 features + Churn), mantendo todas as colunas originais disponíveis para o EDA completo. Features binárias (<code>Group_visits</code>, <code>Promo_friends</code>, <code>Partner</code>, <code>Near_Location</code>) são usadas sem transformação adicional.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <div class="method-title">K-Means — Segmentação Comportamental</div>
+          <p>A opção pelo <strong>KMeans</strong> (scikit-learn) representa uma escolha por aprendizado não supervisionado que organiza clientes em grupos de similaridade comportamental sem utilizar o rótulo histórico de churn no treinamento. As 11 features são normalizadas com <strong>StandardScaler</strong> antes do ajuste. O modelo usa <code>n_clusters=4</code>, <code>n_init=30</code> e <code>random_state=42</code> — K=4 foi escolhido por permitir quatro personas operáveis com leitura clara de negócio.</p>
+          <p style="margin-top:12px">Após o ajuste, cada cluster recebe sua taxa de churn observada. Os clusters são ordenados do maior para o menor churn e mapeados para personas fixas via <strong>PERSONA_BY_CHURN_RANK = [C0, C3, C2, C1]</strong>: o cluster com maior churn vira C0 (Recém-chegado em fuga), o segundo C3 (Médio em trânsito), o terceiro C2 (Engajado mensal) e o de menor churn C1 (Leal anual). Esse mapeamento garante coerência com o relatório de negócios independentemente da ordem aleatória do K-Means. A qualidade da segmentação é reportada pelo <strong>silhouette score</strong> e pela inércia; silhouette baixo é esperado dado o overlap comportamental e não invalida o valor operacional das personas.</p>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <div class="method-title">Random Forest — Predição Individual de Churn</div>
+          <p>A opção pelo <strong>RandomForestClassifier</strong> (scikit-learn) representa uma escolha por classificação supervisionada que estima a probabilidade de churn de cada cliente individualmente. O modelo usa <code>n_estimators=100</code> e <code>random_state=42</code>, treinado em 70% dos dados e avaliado nos 30% restantes. A performance é medida principalmente pelo <strong>ROC-AUC</strong>, métrica adequada para dados com classes desbalanceadas (churn é evento minoritário).</p>
+          <p style="margin-top:12px">Os outputs exibidos na aba Predição incluem: <strong>importância das features</strong> (ranking de contribuição de cada variável), <strong>distribuição de scores de churn</strong> (probabilidade 0–1 por decil), <strong>curva ROC</strong> e <strong>score médio por cluster</strong> — calculado cruzando os rótulos K-Means de todos os 4.000 clientes com seus scores individuais do RF, sem truncamento de amostra.</p>
+        </div>
+      </div>
+      <div class="method-section">
         <div class="method-num">5</div>
         <div class="method-body">
-          <div class="method-title">Interpretação do K-Means</div>
-          <p>A opção pelo <strong>KMeans</strong> representa uma escolha por um algoritmo consolidado de aprendizado não supervisionado, apropriado para segmentar clientes a partir de padrões observados de comportamento. Implementado por meio da biblioteca scikit-learn, o modelo organiza os clientes em grupos de similaridade, permitindo identificar personas com sinais distintos de risco e valor de negócio, ainda que sem utilizar diretamente o rótulo histórico de churn no treinamento. Sua qualidade analítica deve ser interpretada principalmente pela coerência dos agrupamentos, pela separação entre clusters e pela capacidade de produzir segmentos acionáveis para decisão executiva.</p>
+          <div class="method-title">Baseline por Regra de Negócio — Validação Interpretativa</div>
+          <p>A <strong>Baseline por Regra de Negócio</strong> é uma camada explicitamente interpretável, construída a partir de regras auditáveis baseadas em três variáveis: <strong>contract_period</strong>, <strong>lifetime_month</strong> e <strong>avg_class_frequency_current_month</strong>. Clientes com contrato mensal e lifetime curto ou frequência muito baixa são classificados como Alto Risco; contratos semestrais com engajamento intermediário recebem Risco Médio; contratos anuais com frequência consistente recebem Baixo Risco.</p>
+          <p style="margin-top:12px">A utilidade da baseline não está em maximizar acurácia, mas em oferecer <strong>clareza executiva</strong>, <strong>auditabilidade</strong> e um mecanismo de controle metodológico: quando seus segmentos convergem com os clusters do K-Means e com os scores do Random Forest, a análise ganha robustez. A convergência é reportada automaticamente na aba Baseline e usada como evidência de validação cruzada entre os três métodos.</p>
         </div>
       </div>
       <div class="method-section">
         <div class="method-num">6</div>
         <div class="method-body">
-          <div class="method-title">Interpretação do Random Forest</div>
-          <p>A opção pelo <strong>RandomForestClassifier</strong> representa uma escolha por um algoritmo consolidado de machine learning para problemas de classificação supervisionada, amplamente utilizado em contextos de predição de churn. Implementado por meio da biblioteca scikit-learn, o modelo combina múltiplas árvores de decisão para estimar a probabilidade de churn de cada cliente, reduzindo a variância e aumentando a robustez das previsões. Sua performance deve ser avaliada principalmente pelo ROC-AUC, métrica adequada para medir a capacidade do modelo de diferenciar clientes com maior e menor risco de churn.</p>
+          <div class="method-title">Como os Três Modelos se Conectam</div>
+          <p>K-Means, Random Forest e Baseline exercem papéis complementares e não concorrentes. O <strong>K-Means</strong> responde "quem se parece com quem?" — estrutura a base em personas comportamentais e define <em>onde olhar</em>. O <strong>Random Forest</strong> responde "quem tem maior probabilidade de churn?" — estima risco individual e define <em>quem priorizar primeiro</em> dentro e entre as personas. A <strong>Baseline</strong> responde "essa lógica faz sentido de negócio?" — valida os achados com regras auditáveis e vocabulário executivo.</p>
+          <p style="margin-top:12px">A jornada metodológica seguiu essa sequência deliberada: EDA revelou os sinais descritivos → K-Means organizou as personas → Baseline estressou os achados → Random Forest transformou segmentação em priorização preditiva individual. Cada etapa construiu sobre os achados da anterior, sem substituição. A arquitetura técnica (Vercel serverless) garante que o mesmo pipeline rode a partir de qualquer CSV compatível com o formato padrão da Vitaliza.</p>
         </div>
       </div>
       <div class="method-section">
         <div class="method-num">7</div>
         <div class="method-body">
-          <div class="method-title">Interpretação da Baseline por Regra de Negócio</div>
-          <p>A opção pela <strong>Baseline por Regra de Negócio</strong> representa uma escolha deliberada por uma camada de validação interpretável, construída a partir de regras simples e diretamente compreensíveis por stakeholders de negócio. Em vez de depender exclusivamente de aprendizado estatístico, essa abordagem organiza perfis de risco a partir de variáveis-chave como tipo de contrato, tempo de plataforma e sinais básicos de engajamento. Sua utilidade não está em maximizar performance preditiva, mas em oferecer clareza executiva, capacidade de auditoria e um mecanismo de controle para testar a robustez dos achados produzidos pelo K-Means e pelo Random Forest.</p>
-        </div>
-      </div>
-      <div class="method-section">
-        <div class="method-num">8</div>
-        <div class="method-body">
-          <div class="method-title">Como K-Means e Random Forest se conectam</div>
-          <p>Neste artefato, <strong>K-Means</strong> e <strong>Random Forest</strong> exercem papéis complementares e não concorrentes. O K-Means responde à pergunta "quem se parece com quem?" e permite organizar a base em personas comportamentais interpretáveis. Já o Random Forest responde à pergunta "quem tem maior probabilidade de churn?" e permite estimar risco individual dentro e através dessas personas.</p>
-          <p style="margin-top:12px">Em termos de negócio, isso significa que a segmentação define <strong>onde olhar</strong>, enquanto a predição ajuda a definir <strong>quem priorizar primeiro</strong>. A primeira camada estrutura a leitura estratégica; a segunda torna a ação operacional mais precisa.</p>
-          <p style="margin-top:12px">A <strong>baseline por regra de negócio</strong> atua como uma terceira lente de validação interpretativa. Quando os eixos simples de contrato e lifetime convergem com os clusters do K-Means e com os scores de risco do Random Forest, a análise ganha robustez metodológica e clareza executiva.</p>
-          <p style="margin-top:12px">Essa arquitetura expressa a jornada de aprendizado do trabalho: começamos com uma leitura descritiva, testamos uma lógica simples de negócio, refinamos a segmentação com K-Means e, por fim, incorporamos o Random Forest para transformar segmentação em priorização preditiva.</p>
-        </div>
-      </div>
-      <div class="method-section">
-        <div class="method-num">9</div>
-        <div class="method-body">
           <div class="method-title">Limitações Explícitas</div>
           <ul class="deck-list">
-            <li>Ausência de motivo declarado de cancelamento — a análise é observacional.</li>
-            <li>Snapshot mensal sem série temporal granular — não captura sazonalidade.</li>
-            <li>Silhouette score baixo sugere fronteiras pouco nítidas entre clusters.</li>
-            <li>A baseline por regra é simples por design — não maximiza performance.</li>
-            <li>Diferença entre correlação e causalidade — hipóteses ainda a validar.</li>
-            <li>Amostra potencialmente menor que a base total da Vitaliza.</li>
-            <li>Risco de sleeping dogs ao supercontatar o C1 (Leal anual).</li>
+            <li>Ausência de motivo declarado de cancelamento — a análise é observacional, não causal.</li>
+            <li>Snapshot mensal sem série temporal granular — sazonalidade e tendências não são capturadas.</li>
+            <li>Silhouette score baixo indica fronteiras pouco nítidas entre clusters; personas têm valor de negócio mesmo assim.</li>
+            <li>A baseline por regra é simples por design — não maximiza performance preditiva.</li>
+            <li>gender e Phone têm correlação próxima de zero e foram excluídos dos modelos — confirmado no EDA (pág. 7 do relatório).</li>
+            <li>Correlação não implica causalidade — hipóteses de cada persona ainda precisam de validação experimental.</li>
+            <li>C3 (Médio em trânsito) é o menor cluster (n ≈ 386); estatísticas têm intervalo de confiança maior — recomenda-se GMM em fase posterior.</li>
+            <li>Risco de sleeping dogs ao supercontatar o C1 (Leal anual) — campanhas agressivas podem despertar cancelamento por lembrança.</li>
+            <li>Base de 4.000 clientes pode representar amostra parcial da Vitaliza — escala das ações deve aguardar validação em produção.</li>
           </ul>
         </div>
       </div>

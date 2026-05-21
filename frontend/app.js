@@ -90,25 +90,12 @@ document.querySelectorAll('.toggle-btn').forEach(btn => {
 });
 
 // ── File upload ───────────────────────────────────────────────────────────────
-const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('csv-file');
-
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('drag-over');
-  handleFile(e.dataTransfer.files[0]);
-});
 fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
 
 function handleFile(file) {
   if (!file || !file.name.endsWith('.csv')) { showToast('Selecione um arquivo .csv', 'error'); return; }
   selectedFile = file;
-  document.getElementById('file-name').textContent = file.name;
-  dropZone.classList.add('has-file');
-  dropZone.querySelector('.drop-text').textContent = file.name;
   document.getElementById('run-btn').disabled = false;
 }
 
@@ -119,9 +106,6 @@ function clearAnalysis() {
   // Reset file
   selectedFile = null;
   fileInput.value = '';
-  document.getElementById('file-name').textContent = '';
-  dropZone.classList.remove('has-file');
-  dropZone.querySelector('.drop-text').textContent = 'Arraste o CSV ou clique para selecionar';
   document.getElementById('run-btn').disabled = true;
 
   // Hide results

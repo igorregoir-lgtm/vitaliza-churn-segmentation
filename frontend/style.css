@@ -135,18 +135,14 @@ input[type="number"] {
 input[type="number"]:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 4px rgba(37,99,235,0.12); }
 .field-hint { color: var(--muted); font-size: 0.78rem; line-height: 1.55; }
 
-/* DROP ZONE */
-.drop-zone {
-  border: 2px dashed var(--border-strong); border-radius: var(--radius-md);
-  padding: 28px 20px; text-align: center; cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+/* FILE INPUT BOX */
+.file-input-box {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 14px; background: var(--surface);
 }
-.drop-zone:hover, .drop-zone.drag-over { border-color: var(--brand); background: var(--brand-soft); }
-.drop-zone.has-file { border-color: var(--low); border-style: solid; background: var(--low-soft); }
-.drop-icon { font-size: 2rem; margin-bottom: 8px; }
-.drop-text { font-weight: 700; color: var(--text); font-size: 0.92rem; }
-.drop-hint { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
-.file-name { color: var(--low); font-size: 0.82rem; font-weight: 700; min-height: 20px; }
+.file-input-box input[type="file"] {
+  font-size: 0.9rem; color: var(--text); width: 100%;
+}
 
 /* TOGGLE GROUP */
 .toggle-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
