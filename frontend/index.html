@@ -49,7 +49,7 @@
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="upload">Upload</button>
     <button class="tab-btn" data-tab="eda">EDA</button>
-    <button class="tab-btn" data-tab="segmentation">Segmentação</button>
+    <button class="tab-btn" data-tab="segmentation">Segmentação / Personas</button>
     <button class="tab-btn" data-tab="prediction">Predição</button>
     <button class="tab-btn" data-tab="baseline">Baseline</button>
     <button class="tab-btn" data-tab="deck">Mini Deck</button>
@@ -94,7 +94,10 @@
             </div>
           </div>
 
-          <button id="run-btn" disabled>Executar Análise</button>
+          <div class="btn-row">
+            <button id="run-btn" disabled>Executar Análise</button>
+            <button id="clear-btn" hidden>Limpar análise</button>
+          </div>
         </div>
       </div>
 
